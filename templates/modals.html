@@ -1,6 +1,6 @@
 <section id='student-modal' class='hidden py-8 overflow-hidden z-20 w-full h-screen bg-black/40 top-0 fixed transition-colors duration-500'>
     <div class='text-sm flex h-full relative justify-center items-center'>
-        <div id='student-modal-card' class='w-1/2 max-md:w-[80%] p-8 bg-white rounded-xl shadow-xl opacity-0 relative z-[21] translate-y-3/4 transition-all duration-500 ease-in-out'>
+        <div id='student-modal-card' class='w-1/2 max-md:w-[80%] h-full flex flex-col gap-4 p-8 bg-white rounded-xl shadow-xl opacity-0 relative z-[21] translate-y-3/4 transition-all duration-500 ease-in-out'>
             <button class='absolute top-5 right-5 active:scale-90' onclick='closeStudentModal()'>
                 <i class="fa-solid fa-square-xmark text-red-500 text-lg hover:scale-110"></i>
             </button>
@@ -22,7 +22,7 @@
             action="{{ url_for('update_student') }}"
             enctype='multipart/form-data'
             onsubmit='return isFields();' 
-            class='h-full'>
+            class='h-full w-full p-1 overflow-x-hidden overflow-y-scroll'>
                 <div class='flex flex-col items-stretch h-full pt-2 gap-3'>
                     <div class='w-full relative mb-2 flex flex-col'>
                         <input id='edit-add-flag' name='edit-add-flag' type='hidden' value='add'>
@@ -149,7 +149,7 @@
                         type="submit" 
                         id='student-modal-submit-btn' 
                         form='student-modal-form' 
-                        class='text-white text-sm py-2 rounded-xl bg-blue-400 shadow-md w-1/2 hover:scale-105 active:scale-100'
+                        class='text-white text-sm py-2 rounded-xl bg-blue-500 shadow-md w-1/2 hover:scale-105 active:scale-100'
                         >
                             Submit
                         </button>
@@ -160,8 +160,8 @@
     </div>
 </section>
 <section id='attendance-modal' class='hidden py-8 overflow-hidden z-20 w-full h-screen bg-black/40 top-0 fixed transition-colors duration-500'>
-    <div class='text-sm flex relative justify-center items-center'>
-        <div id='attendance-modal-card' class='w-1/2 max-md:w-[80%] h-full p-8 bg-white rounded-xl shadow-xl opacity-0 relative z-[21] translate-y-3/4 transition-all duration-500 ease-in-out'>
+    <div class='text-sm flex relative justify-center items-center h-full'>
+        <div id='attendance-modal-card' class='w-1/2 max-md:w-[80%] h-full flex flex-col gap-4 p-8 bg-white rounded-xl shadow-xl opacity-0 relative z-[21] translate-y-3/4 transition-all duration-500 ease-in-out'>
             <button class='absolute top-5 right-5 active:scale-90' onclick='closeAttendanceModal()'>
                 <i class="fa-solid fa-square-xmark text-red-500 text-lg hover:scale-110"></i>
             </button>
@@ -176,7 +176,7 @@
             </div>
             <div 
             id="attendance-info-section"
-            class='hidden flex gap-4 flex-col h-full'
+            class='hidden flex gap-4 p-1 flex-col h-full overflow-y-scroll overflow-x-hidden'
             >
                 <div class="relative flex gap-4">
                     <div class="flex justify-around w-full">
@@ -251,14 +251,14 @@
                 </div>	
                 <button 
                 onclick="submitAttendance()"
-                class='w-40 py-2 px-2 self-end bg-green-400 rounded-md shadow-md text-white'>
+                class='w-40 py-2 px-2 self-end bg-green-500 hover:bg-green-400 active:scale-95 rounded-md shadow-md text-white'>
                     <i class="fa-solid fa-check text-md text-white pointer-events-none"></i>
                     <span>Mark Attendance</span>
                 </button>
             </div>
             <div 
             id="attendance-qrcode-section" 
-            class="flex justify-center h-[75%] relative">
+            class="flex justify-center p-1 h-full overflow-y-scroll overflow-x-hidden relative">
                 <div id='qrcode-reader' class='bg-gray-300 w-full h-full mt-2 self-center'>
                 </div>
                 <button 
