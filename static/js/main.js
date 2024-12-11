@@ -43,7 +43,7 @@ function attendanceIsFields() {
 	const imageName = document.getElementById('attendance-info-image').src;
 	const qrCode = document.getElementById('attendance-info-qrcode').src;
 	if (!idNo || !lastName || !firstName || !courseName || !courseLevel || imageName == defaultImg || qrCode == defaultImg) {
-		alert('Please scan a QRCode first.');
+		alert('Please fill in all the fields.');
 		return false;
 	} else {
 		return true;
@@ -61,144 +61,9 @@ function submitAttendance() {
 	}
 }
 
-function markAttendance() {
-	openAttendanceModal();
-	let qrCode = document.getElementById('attendance-info-qrcode');
-	let image = document.getElementById('attendance-info-image');
-
-	qrCode.src = defaultImg;
-	image.src = defaultImg;
-	openQrcodeScanner();
-}
-
-function openAttendanceModal() {
-	let modal = document.getElementById('attendance-modal');
-	let modalCard = document.getElementById('attendance-modal-card');
-	showModal(modal, modalCard);
-}
-
-function closeAttendanceModal() {
-	let modal = document.getElementById('attendance-modal');
-	let modalCard = document.getElementById('attendance-modal-card');
-	hideModal(modal, modalCard);
-	setTimeout( function() {
-		closeQrcodeScanner();
-		gotoAttendanceQRCodeSection();
-	}, 2000);
-}
-
-function postAttendance(idno) {
-	const kwargs = {time_logged:timestamp_time, date_logged:timestamp_date, idno:idno}
-	postData(add_attendance_path, kwargs);
-}
-
-function gotoAttendanceQRCodeSection() {
-	let qrCodeSection = document.getElementById('attendance-qrcode-section');
-	let infoSection = document.getElementById('attendance-info-section');
-
-	qrCodeSection.classList.remove('hidden');
-	infoSection.classList.add('hidden');
-
-	openQrcodeScanner();
-}
-
-function gotoAttendanceInfoSection() {
-	let qrCodeSection = document.getElementById('attendance-qrcode-section');
-	let infoSection = document.getElementById('attendance-info-section');
-
-	qrCodeSection.classList.add('hidden');
-	infoSection.classList.remove('hidden');
-
-	closeQrcodeScanner();
-}
-
-let scanner = null;
-
-function openQrcodeScanner() {
-	scanner = new Html5QrcodeScanner('qrcode-reader', {
-		qrbox: {
-			width: 350,
-			height: 250,
-		},
-		fps: 20,
-	
-	})
-	scanner.render(success);
-}
-
-function closeQrcodeScanner() {
-	try {
-		scanner.clear();
-	} catch(err) {
-		console.log('QRCode not set up. ', err);
-	}
-}
-
-function success(result) {
-	alert(`Scanning success! IDNO=${result}`);
-	scanner.clear();
-	gotoAttendanceInfoSection();
-	let idnoElement = document.getElementById('get-student-form-idno');
-	let idnoForm = document.getElementById('get-student-form');
-	idnoElement.value = result;
-	idnoForm.dispatchEvent(new Event('submit'));
-}
-
-addEventListener('load', function() {
-	if (this.window.location.pathname != index_path) {
-		try {
-			state = scanner.getState();
-			if (state) {
-				scanner.clear();
-			}
-			console.log('Scanner cleared!')
-		} catch (err) {
-			console.log("QRCode scanner does not exist");
-		}
-	}
-})
-
-document.getElementById('get-student-form').addEventListener('submit', async function(e) {
-	e.preventDefault();
-
-	const idno = document.getElementById('get-student-form-idno').value;
-
-	try {
-		const response = await fetch('/get_student', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
-			},
-			body: `idno=${encodeURIComponent(idno)}`
-		});
-		console.log(response);
-		const data = await response.json();
-		let idNo = document.getElementById('attendance-idno');
-		let lastName = document.getElementById('attendance-lastname');
-		let firstName = document.getElementById('attendance-firstname');
-		let courseName = document.getElementById('attendance-course');
-		let courseLevel = document.getElementById('attendance-level');
-		let imageName = document.getElementById('attendance-info-image');
-		let qrCode = document.getElementById('attendance-info-qrcode');
-		idNo.value = data.idno;
-		lastName.value = data.lastname;
-		firstName.value = data.firstname;
-		courseName.value = data.course;
-		courseLevel.value = data.level;
-		imageName.src = data.image;
-		qrCode.src = data.qrcode;
-
-		console.log(data);
-
-	} catch (error) {
-		alert('QrCode Scanning: Student does not exist! Please scan another.')
-		console.log(error);
-	}
-})
-
 // login remember me
 addEventListener('load', function() {
-	if (window.location.pathname === admin_login_path) {
+	if (window.location.pathname === index_path) {
 		const rememberedUsername = localStorage.getItem('rememberedUsername');
 		const rememberedPassword = localStorage.getItem('rememberedPassword');
 		document.getElementById('username').value = rememberedUsername;
@@ -219,7 +84,6 @@ function handleRememberMeCheck() {
 }
 
 function dropMenu() {
-	let headerBtn = document.getElementById('header-dropdown');
 	let headerBtnFlag = document.getElementById('dropdown-flag');
 	let dropdown = document.getElementById('settings-dropdown');
 
@@ -392,7 +256,6 @@ function addStudent() {
 	
 	document.getElementById('idno').readOnly = false;
 	document.getElementById('image').src = defaultImg;
-	document.getElementById('qrcode').src = defaultImg;
 }
 
 function editStudent(button) {
@@ -415,7 +278,6 @@ function editStudent(button) {
 	const firstname = button.dataset.firstname;
 	const course = button.dataset.course;
 	const level = button.dataset.level;
-	const qrcode = button.dataset.qrcode;
 	const image = button.dataset.image;
 
 	document.getElementById('idno').value = idno;
@@ -424,12 +286,7 @@ function editStudent(button) {
 	document.getElementById('firstname').value = firstname;
 	document.getElementById('course').value = course;
 	document.getElementById('level').value = level;
-	document.getElementById('qrcode').src = qrcode;
 	document.getElementById('image').src = image;
-	
-	if (qrcode == 'None') {
-		document.getElementById('qrcode').src = defaultImg;
-	} 
 
 	if (image == 'None') {
 		document.getElementById('image').src = defaultImg;
@@ -473,24 +330,17 @@ function setWebcam() {
 }
 
 function takeSnapshot() {
-	const idno = document.getElementById('idno').value;
-	if (idno != '') {
-		Webcam.snap( function(data_uri) {
-			document.getElementById('webcam-result').innerHTML = '<img src="' + data_uri + '"/>';
-		})
-		document.getElementById('image').src = document.getElementById('webcam-result').querySelector('img').src;
+	Webcam.snap( function(data_uri) {
+		document.getElementById('webcam-result').innerHTML = '<img src="' + data_uri + '"/>';
+	})
+	document.getElementById('image').src = document.getElementById('webcam-result').querySelector('img').src;
+	
+	console.log('attempting to upload snap...')
+	let webcamResultElement = document.getElementById('webcam-result').querySelector('img');
+	let webcamInputElement = document.getElementById('image-upload');
+	base64ToFileStorageObject(webcamResultElement.src, "webcam_snapshot", webcamInputElement);	
+	console.log('webcam: ', webcamInputElement.value);
 
-		const idno = document.getElementById('idno').value;
-		createQRCode(idno);
-		
-		console.log('attempting to upload snap...')
-		let webcamResultElement = document.getElementById('webcam-result').querySelector('img');
-		let webcamInputElement = document.getElementById('image-upload');
-		base64ToFileStorageObject(webcamResultElement.src, "webcam_snapshot", webcamInputElement);	
-		console.log('webcam: ', webcamInputElement.value);
-	} else {
-		alert("Please state the student's idno first before snapping a picture.");
-	}
 }
 
 function closeWebcam() {
@@ -625,15 +475,6 @@ function followMouse(element) {
 	return () => document.removeEventListener('mousemove', mouselistener);
 }
 
-function promptIfIdnoEmpty(event) {
-	console.log('idno   ',document.getElementById('idno').value)
-	if (document.getElementById('idno').value == '') {
-		alert('Please state your id number first.')
-		event.preventDefault();
-		return;
-	}
-}
-
 function displayImgUpload(input) {
 	if (input.files && input.files[0]){
         try {
@@ -645,7 +486,6 @@ function displayImgUpload(input) {
         } catch (err) {
         	console.log('eroeroe: ' + err)
         }
-        createQRCode(document.getElementById('idno').value);
     } else {
 		alert('No file selected.')
 	}
@@ -679,21 +519,4 @@ function base64ToFileStorageObject(imageBase64, filename, inputElement) {
 function isBase64(uri) {
 	var base64regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
 	return base64regex.test(uri);
-}
-
-function createQRCode(idno) {
-	var qr = qrcode(4, 'L');
-	qr.addData(idno);
-	qr.make();
-	// In Base64 format
-	let qrcodeDisplay = document.getElementById('qrcode');
-	let qrcodeInput = document.getElementById('qrcode-upload');
-	qrcodeDisplay.src = qr.createDataURL();
-
-	console.log('snapshot qr', qrcodeDisplay.src);
-	console.log('isBase64? ', isBase64(qrcodeDisplay.src.split(',')[1]));
-
-	const filename = 'qrcode' + idno;
-	base64ToFileStorageObject(qrcodeDisplay.src, filename, qrcodeInput);
-	console.log('qrcode: ', qrcodeInput.value);
 }

@@ -16,25 +16,6 @@ def get_users() -> dict:
 def get_students() -> dict:
 	return dbhelper.getall_records('students')
 
-def get_recentattendances() -> dict:
-	sql:str = f"""
-	SELECT s.idno, s.lastname, s.firstname, s.course, s.level, a.date_logged, a.time_logged
-	FROM students s
-	LEFT JOIN attendance a
-	  ON s.idno = a.idno
-	  AND (a.date_logged, a.time_logged) IN (
-	    SELECT date_logged, time_logged
-		FROM attendance
-		WHERE idno = s.idno
-		ORDER BY date_logged DESC, time_logged DESC
-		LIMIT 1)
-	WHERE a.attendance_id IS NOT NULL OR a.idno IS NULL 
-	"""
-	return dbhelper.customget_records('attendance', sql)
-
-def get_attendance() -> dict:
-	return dbhelper.getall_records('attendance')
-
 @app.route('/delete_student', methods=['POST'])
 def delete_student(): 
 	try:
@@ -45,26 +26,6 @@ def delete_student():
 		os.remove(image)
 	except Exception as e:
 		flash(f'Student Delete: {e}')
-  
-	try:
-		qrcode:str = record['qrcode']
-		os.remove(qrcode)
-	except Exception as e:
-		print(f"student delete: {e}")
-		
-	try:
-		sql:str = f"""
-				SELECT idno 
-				FROM attendance 
-				WHERE idno = '{idno}'
-				"""
-		attendance = dict(dbhelper.customget_records('attendance', sql)[0])['idno']
-		ok_attendance:bool = False
-		ok_attendance = dbhelper.delete_record('attendance', idno=attendance)
-		flash(f"Student Delete: Attendance records of respective student deleted successfully.") if ok_attendance else flash(f"Student Delete: Attendance records of respective student failed to delete.")
-	except IndexError:
-		print(f"{idno} has no attendance records")
-	
 
 	ok:bool = False
 	ok = dbhelper.delete_record('students', idno=idno)
@@ -78,14 +39,12 @@ def update_student():
 	firstname:str = request.form.get('firstname')
 	course:str = request.form.get('course')
 	level:str = request.form.get('level')
-	qrcodefile = request.files.get('qrcode-upload')
 	imagefile = request.files.get('image-upload')
 	isUpdateNotAdd:str = request.form.get('edit-add-flag') == 'edit'
 
 	print('\n\n')
 	print("data: ", idno, lastname, firstname, course, level)
 	print("isUpdate: ", isUpdateNotAdd)
-	print('qr file: ', qrcodefile)
 	print('image file: ', imagefile)
 	print('\nrequest.form:   ', request.form)
 	print()
@@ -93,32 +52,27 @@ def update_student():
 	ok:bool = False
 
 	image:str = os.path.join(uploadfolder, f"STUDENT_ATTENDANCE_{idno}.jpg")
-	qrcode:str = os.path.join(uploadfolder, f"QRCODE_{idno}.jpg")
 	print('image path:  ', image)
-	print('qr path:  ', qrcode)
 
 	if not os.path.exists(uploadfolder):
 		os.makedirs(uploadfolder)
 	if isUpdateNotAdd:
-		if imagefile.filename != '' and qrcodefile.filename != '':
+		if imagefile.filename != '':
 			try:
 				imagefile.save(image)
-				qrcodefile.save(qrcode)
 			except Exception as e:
 				flash(f"Student Add: {e}")				
-			ok = dbhelper.update_record('students', idno=idno, lastname=lastname, firstname=firstname, course=course, level=level, qrcode=qrcode, image=image)
+			ok = dbhelper.update_record('students', idno=idno, lastname=lastname, firstname=firstname, course=course, level=level, image=image)
 		else:
-			flash('Student Update: Image not saved')
 			ok = dbhelper.update_record('students', idno=idno, lastname=lastname, firstname=firstname, course=course, level=level)
 	else:
 		try:
-			ok = dbhelper.add_record('students', idno=idno, lastname=lastname, firstname=firstname, course=course, level=level, qrcode=qrcode, image=image)		
+			ok = dbhelper.add_record('students', idno=idno, lastname=lastname, firstname=firstname, course=course, level=level, image=image)		
 		except:
 			flash('Student Add: Student cannot be added because idno already exists.')
 		
 		try:
 			imagefile.save(image)
-			qrcodefile.save(qrcode)
 		except Exception as e:
 			flash(f'Student Add: {e}')
 
@@ -128,40 +82,12 @@ def update_student():
 
 	return redirect('/studentlist')
 
-@app.route('/add_attendance', methods=['POST'])
-def add_attendance():
-	idno:str = request.form.get('idno')
-	time_logged:str = request.form.get('time_logged')
-	date_logged:str = request.form.get('date_logged')
-	print(idno + " " + time_logged + " " + date_logged)
-	ok:bool = False
-	try:
-		ok = dbhelper.add_record('attendance', idno=idno, time_logged=time_logged, date_logged=date_logged)
-	except Exception as e:
-		flash(f"Add Attendance: Student does not exist {e}")
-	flash("Add Attendance: Attendance added successfully.") if ok else flash("Add Attendance: Failed to add attendance.")
-	return redirect('/studentlist')
-
 @app.route('/studentlist')
 def studentlist():
 	if not session.get('name'):
 		return redirect('/')
 	else:
 		return render_template('studentinfo.html', header=True, headerTitle='Student Information List', students=get_students())
-
-@app.route('/attendanceviewer')
-def attendanceviewer():
-	if not session.get('name'):
-		return redirect('/')
-	else:
-		return render_template('attendanceviewer.html', header=True, headerTitle="Attendance Viewer", attendances=get_recentattendances())
-
-@app.route('/attendancelog')
-def attendancelog():
-	if not session.get('name'):
-		return redirect('/')
-	else:
-		return render_template('attendancelog.html', header=True, headerTitle="Attendance Log", attendances=get_attendance())
 
 @app.route('/get_student', methods=['POST'])
 def get_student():
@@ -192,15 +118,11 @@ def login():
 			return redirect('/studentlist')
 		else:
 			flash('Login Attempt: Login failed! Username or password is invalid.')
-			return redirect('/admin')
+			return redirect('/')
 
-@app.route('/admin', methods=['POST', 'GET'])
-def admin():
-    return render_template('admin.html')
-
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 def index():
-	return render_template('index.html')
+    return render_template('index.html')
 
 if __name__ == '__main__':
 	app.run(debug=True)
