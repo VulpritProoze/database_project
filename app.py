@@ -96,6 +96,50 @@ def get_student():
 	print(student)
 	return jsonify(student)
 
+@app.route('/delete_null_students', methods=['GET'])
+def delete_null_students():
+	while True:
+		students:object = get_students()
+		delete_occured = False		
+
+		for student in students:
+			idno:str = student['idno']
+			lastname:str = student['lastname']
+			firstname:str = student['firstname']
+			course:str = student['course']
+			level:str = student['level']
+			image:str = student['image']
+   
+			if not idno or not lastname or not firstname or not course or not level:
+				delete_occured = True
+				try:
+					os.remove(image)
+				except:
+					ok:bool = False
+					ok = dbhelper.delete_record('students', idno=idno)
+					flash(f'Student Delete: Student {idno} deleted successfully.') if ok else flash(f'Student Delete: Student {idno} failed to delete.')
+
+		if not delete_occured:
+			break
+	return redirect('/studentlist')
+
+@app.route('/update_three_students', methods=['GET'])
+def update_three_students():
+	students:object = get_students()
+	
+	for i in range(0,3):
+		idno:str = students[i]['idno']
+		lastname:str = 'Benjamin'
+		firstname:str = 'Graham'
+		course:str = students[i]['course']
+		level:str = students[i]['level']
+		image:str = students[i]['image']
+     			
+		ok = dbhelper.update_record('students', idno=idno, lastname=lastname, firstname=firstname, course=course, level=level, image=image)
+		flash(f'Student Update: Student updated successfully.') if ok else flash(f'Student Update: Student failed to update.')
+
+	return redirect('/studentlist')
+
 @app.after_request
 def after_request(response):
 	response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'

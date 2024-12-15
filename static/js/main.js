@@ -22,43 +22,144 @@ function handleLoginSubmit() {
 	}
 }
 
-function downloadQR(button) {
-	const idno = button.dataset.idno;
-	const qrcode = button.dataset.qrcode;
+// header-allow-default-btn
+let headerAllowDefaultBtnFlag = false;
+function toggleHeaderAllowDefault() {
+	headerAllowDefaultBtnFlag = !headerAllowDefaultBtnFlag;
+	let headerAllowDefaultBtnParent = document.querySelector("#header-allow-default-btn").parentElement;
 
-	const link = document.createElement('a');
-	link.href = qrcode;
-	link.download = `qrcode_${idno}.png`;
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
-}
-
-function attendanceIsFields() {
-	const idNo = document.getElementById('attendance-idno').value;
-	const lastName = document.getElementById('attendance-lastname').value;
-	const firstName = document.getElementById('attendance-firstname').value;
-	const courseName = document.getElementById('attendance-course').value;
-	const courseLevel = document.getElementById('attendance-level').value;
-	const imageName = document.getElementById('attendance-info-image').src;
-	const qrCode = document.getElementById('attendance-info-qrcode').src;
-	if (!idNo || !lastName || !firstName || !courseName || !courseLevel || imageName == defaultImg || qrCode == defaultImg) {
-		alert('Please fill in all the fields.');
-		return false;
+	if (headerAllowDefaultBtnFlag) {
+		headerAllowDefaultBtnParent.classList.add('bg-blue-300');
+		headerAllowDefaultBtnParent.classList.remove('hover:bg-blue-100');
+		removeAddStudentDefaultChecks();
 	} else {
-		return true;
+		headerAllowDefaultBtnParent.classList.remove('bg-blue-300');
+		headerAllowDefaultBtnParent.classList.add('hover:bg-blue-100');
+		addStudentDefaultChecks();
 	}
 }
 
-function submitAttendance() {
-	if (attendanceIsFields()) {
-		updateTimestamp();
-		const date = timestamp_date;
-		const time = timestamp_time;
-		const idno = document.getElementById('attendance-idno').value;
-		const kwargs = { idno:idno, date_logged:date, time_logged:time };
-		postData(add_attendance_path, kwargs);
+function removeAddStudentDefaultChecks() {
+	let studentModalForm = document.querySelector('#student-modal-form');
+
+	removeAddStudentRequiredAttr();
+	studentModalForm.setAttribute('onsubmit', 'return notDefaultIsFields()');
+}
+
+function addStudentDefaultChecks() {
+	let studentModalForm = document.querySelector('#student-modal-form');
+
+	studentModalForm.setAttribute('onsubmit', 'return isFields()');
+}
+
+function removeAddStudentRequiredAttr() {
+	let idNo = document.getElementById('idno');
+	let lastName = document.getElementById('lastname');
+	let firstName = document.getElementById('firstname');
+	let courseName = document.getElementById('course');
+	let courseLevel = document.getElementById('level');
+	
+	idNo.required = false;
+	lastName.required = false;
+	firstName.required = false;
+	courseName.required = false;
+	courseLevel.required = false;
+}
+
+function AddStudentRequiredAttr() {
+	let idNo = document.getElementById('idno');
+	let lastName = document.getElementById('lastname');
+	let firstName = document.getElementById('firstname');
+	let courseName = document.getElementById('course');
+	let courseLevel = document.getElementById('level');
+	
+	idNo.required = true;
+	lastName.required = true;
+	firstName.required = true;
+	courseName.required = true;
+	courseLevel.required = true;
+}
+
+function notDefaultIsFields() {
+	return true;
+}
+
+// student-search-input
+let headerQueryStudentFlag = false;
+
+function toggleHeaderQueryStudent() {
+	headerQueryStudentFlag = !headerQueryStudentFlag;
+	headerQueryStudentBtnParent = document.querySelector('#header-query-student-btn').parentElement;
+
+	const query = document.querySelector('#student-search-input');
+	if (headerQueryStudentFlag) {
+		query.classList.remove('hidden');
+		headerQueryStudentBtnParent.classList.add('bg-blue-300');
+		headerQueryStudentBtnParent.classList.remove('hover:bg-blue-100');
+	} else {
+		query.classList.add('hidden');
+		headerQueryStudentBtnParent.classList.remove('bg-blue-300');
+		headerQueryStudentBtnParent.classList.add('hover:bg-blue-100');
 	}
+}
+
+function searchStudentTable() {
+	const input = document.querySelector("#student-search-input");
+	const filter = input.value.toLowerCase();
+	const table = document.querySelector("#student-info-table");
+	const rows = table.getElementsByTagName('tr');
+	let visibleRowCount = 0;
+
+	for (let i=1; i<rows.length; i++) {
+		const cells = rows[i].getElementsByTagName("td");
+		let rowContainsFilter = false;
+
+		for (let j=0; j<cells.length; j++) {
+			const cellText = cells[j].textContent || cells[j].innerText;
+			if (cellText.toLowerCase().indexOf(filter) > -1) {
+				rowContainsFilter = true;
+				break;
+			}
+		}
+
+		if (rowContainsFilter) {
+			rows[i].style.display = "";
+			visibleRowCount++;
+		} else {
+			rows[i].style.display = "none";
+		}
+	}
+
+	const emptyTableSpan = document.querySelector("#empty-student-table-span");
+	if (!visibleRowCount) {
+		emptyTableSpan.classList.remove('hidden');
+	} else {
+		emptyTableSpan.classList.add('hidden');
+	}
+}
+
+// header-delete-null-btn
+function deleteNullStudents() {
+	if (promptDeleteNullStudents()) {
+		window.location.href = 'delete_null_students';
+	} else {
+		console.log('deleting null student cancelled')
+	}
+}
+
+function promptDeleteNullStudents() {
+	return confirm("Do you really want to delete all students with null values?");
+}
+
+// updateThreeRecords()
+function updateThreeRecords() {
+	if (promptUpdateThreeStudents()) {
+		window.location.href = 'update_three_students';
+	}
+}
+
+function promptUpdateThreeStudents() {
+	return confirm("Do you really want to update three students with same values? ('Benjamin Graham') ");
 }
 
 // login remember me
@@ -183,30 +284,6 @@ addEventListener('load', function(){
 			emptyStudentStringSpan.classList.add('hidden');
 		} else {
 			emptyStudentStringSpan.classList.remove('hidden');
-		}
-	}
-
-	if (window.location.pathname == attendance_viewer_path) {
-		let emptyAttendanceViewerSpan = document.getElementById('empty-attendance-viewer-table-span');
-		// empty-attendance-viewer-table-span
-		const attendanceViewer = document.querySelectorAll('#attendance-viewer-table tbody tr').length;
-
-		if (attendanceViewer) {
-			emptyAttendanceViewerSpan.classList.add('hidden');
-		} else {
-			emptyAttendanceViewerSpan.classList.remove('hidden');
-		}
-	}
-
-	if (window.location.pathname == attendance_log_path) {
-		let emptyAttendanceLogSpan = document.getElementById('empty-attendance-log-table-span');
-		// empty-attendance-log-table-span
-		const attendanceLog = document.querySelectorAll('#attendance-log-table tbody tr').length;
-
-		if (attendanceLog) {
-			emptyAttendanceLogSpan.classList.add('hidden');
-		} else {
-			emptyAttendanceLogSpan.classList.remove('hidden');
 		}
 	}
 });
@@ -360,7 +437,6 @@ function cancelData(id) {
 	let firstName = document.getElementById('firstname');
 	let courseName = document.getElementById('course');
 	let courseLevel = document.getElementById('level');
-	let qrCode = document.getElementById('qrcode');
 	let imageSrc = document.getElementById('image');
 	let imageUploadSrc = document.getElementById('image-upload');
 
@@ -370,14 +446,12 @@ function cancelData(id) {
 		const firstname = button.dataset.firstname;
 		const course = button.dataset.course;
 		const level = button.dataset.level;
-		const qrcode = button.dataset.qrcode;
 		const image = button.dataset.image;
 		idNo.value = idno;
 		lastName.value = lastname;
 		firstName.value = firstname;
 		courseName.value = course;
 		courseLevel.value = level;
-		qrCode.src = qrcode;
 		imageSrc.src = image;
 		imageUploadSrc.value = '';
 		try {
@@ -391,7 +465,6 @@ function cancelData(id) {
 		firstName.value = '';
 		courseName.value = '';
 		courseLevel.value = '';
-		qrCode.src = defaultImg;
 		imageSrc.src = defaultImg;
 		imageUploadSrc.value = '';
 		try {
@@ -400,15 +473,6 @@ function cancelData(id) {
 			console.log('Webcam inner html dont yet exist!    ', err)
 		}
 	}
-
-	// console.log('idno  ', idNo.value)
-	// console.log('lastname      ', lastName.value)
-	// console.log('firstname  ', firstName.value)
-	// console.log('course  ', courseName.value)
-	// console.log('level  ', courseLevel.value)
-	// console.log('qr  ', qrCode.src)
-	// console.log('img  ', imageSrc.src)
-	// console.log('img-upload  ', imageUploadSrc.value)
 }
 
 function showModal(modal, modalCard) {

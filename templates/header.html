@@ -60,9 +60,26 @@
                     </button>			
                 </li>
                 <li class='border-b-2 w-full hover:bg-blue-100 px-4 py-2 text-center'>
+                    <button type='button'
+                    id="header-allow-default-btn" 
+                    onclick="toggleHeaderAllowDefault()" 
+                    class='active:scale-95'>1. Allow default students</button>			
+                </li>
+                <li class='border-b-2 w-full hover:bg-blue-100 px-4 py-2 text-center'>
                     <button type='button' 
-                    onclick="window.location.href='{{ url_for('studentlist') }}'" 
-                    class='active:scale-95'>Student List</button>			
+                    id="header-query-student-btn"
+                    onclick="toggleHeaderQueryStudent()" 
+                    class='active:scale-95'>2. Query all similar students</button>			
+                </li>
+                <li class='border-b-2 w-full hover:bg-blue-100 px-4 py-2 text-center'>
+                    <button type='button' 
+                    onclick="deleteNullStudents()" 
+                    class='active:scale-95'>3. Delete null students</button>			
+                </li>
+                <li class='border-b-2 w-full hover:bg-blue-100 px-4 py-2 text-center'>
+                    <button type='button' 
+                    onclick="updateThreeRecords()" 
+                    class='active:scale-95'>4. Update 3 records</button>			
                 </li>
             </ul>
         </div>

@@ -6,19 +6,25 @@ database = 'studentinfo.db'
 def getprocess(sql:str) -> object:
 	db:object = connect(database)
 	cursor:object = db.cursor()
-	cursor.execute(sql)
-	cursor.row_factory = Row
-	data:dict = cursor.fetchall()
+	try:
+		cursor.execute(sql)
+		cursor.row_factory = Row
+		data:dict = cursor.fetchall()
+		# for d in data:
+		# 	print(dict(d))
+	except Exception as e:
+		print("DB PROCESS ERROR: ", e)
 	db.close()
-	for d in data:
-		print(dict(d))
 	return data
 
 def postprocess(sql:str) -> bool:
 	db:object = connect(database)
 	cursor:object = db.cursor()
-	cursor.execute(sql)
-	db.commit()
+	try:
+		cursor.execute(sql)
+		db.commit()
+	except Exception as e:
+		print('DB ERROR: ', e)
 	db.close()
 	return True if cursor.rowcount > 0 else False
 
